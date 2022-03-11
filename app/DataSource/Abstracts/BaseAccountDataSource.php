@@ -14,4 +14,6 @@ abstract class BaseAccountDataSource implements AccountDataSourceInterface
     {
         return $this->accessToken;
     }
+
+    abstract public function isAccountCompatible(string $id): bool;
 }
