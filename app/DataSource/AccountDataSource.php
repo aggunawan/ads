@@ -5,26 +5,24 @@ namespace App\DataSource;
 use App\DataSource\Abstracts\BaseAccountDataSource;
 use App\DataSource\Contracts\AccountDataSourceInterface;
 use App\Exceptions\UnresolvedAdAccount;
-use App\Facebook\AdAccountDataSource;
-use App\Google\CustomerDataSource;
+use App\Objects\Account;
 use App\Objects\Contracts\AccountInterface;
-use App\TikTok\AdvertiserDataSource;
-use Illuminate\Support\Str;
-use JetBrains\PhpStorm\Pure;
 
+/**
+ * @version 0.1
+ */
 class AccountDataSource extends BaseAccountDataSource implements AccountDataSourceInterface
 {
-    private CustomerDataSource $customerDataSource;
-    private AdAccountDataSource $facebookDataSource;
-    private AdvertiserDataSource $tikTokDataSource;
+    private array $dataSources = [];
 
-    #[Pure]
-    public function __construct(string $accessToken)
+    public function isAccountCompatible(string $id): bool
     {
-        parent::__construct($accessToken);
-        $this->customerDataSource = new CustomerDataSource($accessToken);
-        $this->facebookDataSource = new AdAccountDataSource($accessToken);
-        $this->tikTokDataSource = new AdvertiserDataSource($accessToken);
+        return false;
+    }
+
+    public function setDataSources(BaseAccountDataSource $dataSources): void
+    {
+        $this->dataSources[] = $dataSources;
     }
 
     /**
@@ -32,27 +30,24 @@ class AccountDataSource extends BaseAccountDataSource implements AccountDataSour
      */
     public function find(string $accountId): AccountInterface
     {
-        if (Str::startsWith($accountId, 'customers/')) return $this->getCustomerDataSource()->find($accountId);
-        if (Str::startsWith($accountId, 'act_')) return $this->getFacebookDataSource()->find($accountId);
+        $dataSource = $this->getCompatibleDataSource($accountId);
 
-        $account = $this->getTikTokDataSource()->find($accountId);
-        if ($account instanceof AccountInterface) return $account;
+        if ($dataSource instanceof BaseAccountDataSource) {
+            $account = $dataSource->find($accountId);
+            if ($account instanceof Account) return $account;
+        }
 
         throw new UnresolvedAdAccount();
     }
 
-    protected function getCustomerDataSource(): CustomerDataSource
+    private function getCompatibleDataSource(string $accountId): ?BaseAccountDataSource
     {
-        return $this->customerDataSource;
-    }
+        foreach ($this->dataSources as $dataSource) {
+            if ($dataSource instanceof BaseAccountDataSource) {
+                if ($dataSource->isAccountCompatible($accountId)) return $dataSource;
+            }
+        }
 
-    protected function getFacebookDataSource(): AdAccountDataSource
-    {
-        return $this->facebookDataSource;
-    }
-
-    protected function getTikTokDataSource(): AdvertiserDataSource
-    {
-        return $this->tikTokDataSource;
+        return null;
     }
 }

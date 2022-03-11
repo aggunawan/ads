@@ -2,100 +2,91 @@
 
 namespace Tests\Unit\DataSource;
 
+use App\DataSource\Abstracts\BaseAccountDataSource;
 use App\DataSource\AccountDataSource;
 use App\Exceptions\UnresolvedAdAccount;
-use App\Facebook\AdAccountDataSource;
-use App\Google\CustomerDataSource;
 use App\Objects\Account;
-use App\TikTok\AdvertiserDataSource;
-use Mockery;
 use PHPUnit\Framework\TestCase;
+use ReflectionProperty;
 
 class AccountDataSourceTest extends TestCase
 {
-    /**
-     * @throws UnresolvedAdAccount
-     */
-    public function testFindGoogleCustomer()
+    private ?AccountDataSource $dataSource;
+
+    protected function setUp(): void
     {
-        $account = Mockery::mock(Account::class);
+        $this->dataSource = new AccountDataSource('foo');
+        parent::setUp();
+    }
 
-        $proxy = Mockery::mock(CustomerDataSource::class);
-        $proxy->shouldReceive('find')->once()->andReturn($account);
+    protected function tearDown(): void
+    {
+        $this->dataSource = null;
+        parent::tearDown();
+    }
 
-        $dataSource = Mockery::mock(AccountDataSource::class)->makePartial();
-        $dataSource->shouldAllowMockingProtectedMethods();
-        $dataSource->shouldReceive('getCustomerDataSource')->once()->andReturn($proxy);
-        $dataSource->shouldReceive('getFacebookDataSource')->never();
-        $dataSource->shouldReceive('getTikTokDataSource')->never();
+    public function testIsAccountCompatible()
+    {
+        self::assertFalse($this->dataSource->isAccountCompatible('foo'));
+    }
 
-        if ($dataSource instanceof AccountDataSource) {
-            self::assertSame($account, $dataSource->find('customers/foo'));
-            Mockery::close();
+    public function testSetDataSources()
+    {
+        $props = new ReflectionProperty(AccountDataSource::class, 'dataSources');
+
+        self::assertEmpty($props->getValue($this->dataSource));
+
+        $source = $this->createMock(BaseAccountDataSource::class);
+        $this->dataSource->setDataSources($source);
+
+        self::assertCount(1, $props->getValue($this->dataSource));
+        self::assertSame($source, $props->getValue($this->dataSource)[0]);
+    }
+
+    public function testFind()
+    {
+        $source = $this->createMock(BaseAccountDataSource::class);
+        $source->expects($this->once())
+            ->method('isAccountCompatible')
+            ->with('foo')
+            ->willReturn(true);
+
+        $account = $this->createStub(Account::class);
+        $source->expects($this->once())
+            ->method('find')
+            ->with('foo')
+            ->willReturn($account);
+
+        $this->dataSource->setDataSources($source);
+        try {
+            self::assertSame($account, $this->dataSource->find('foo'));
+        } catch (UnresolvedAdAccount) {
+            $this->fail();
         }
     }
 
-    /**
-     * @throws UnresolvedAdAccount
-     */
-    public function testFindFacebookAdAccount()
+    public function findRaiseUnresolvedAdAccountProvider(): array
     {
-        $account = Mockery::mock(Account::class);
+        $mock = $this->createMock(BaseAccountDataSource::class);
+        $mock->expects($this->once())
+            ->method('isAccountCompatible')
+            ->with('foo')
+            ->willReturn(false);
 
-        $proxy = Mockery::mock(AdAccountDataSource::class);
-        $proxy->shouldReceive('find')->once()->andReturn($account);
-
-        $dataSource = Mockery::mock(AccountDataSource::class)->makePartial();
-        $dataSource->shouldAllowMockingProtectedMethods();
-        $dataSource->shouldReceive('getCustomerDataSource')->never();
-        $dataSource->shouldReceive('getFacebookDataSource')->once()->andReturn($proxy);
-        $dataSource->shouldReceive('getTikTokDataSource')->never();
-
-        if ($dataSource instanceof AccountDataSource) {
-            self::assertSame($account, $dataSource->find('act_123'));
-            Mockery::close();
-        }
+        return [
+            'null data source' => [null, 'foo'],
+            'false return from data source' => [$mock, 'foo'],
+        ];
     }
 
     /**
-     * @throws UnresolvedAdAccount
+     * @dataProvider findRaiseUnresolvedAdAccountProvider
      */
-    public function testFindWithTikTokAccount()
-    {
-        $account = Mockery::mock(Account::class);
-
-        $proxy = Mockery::mock(AdvertiserDataSource::class);
-        $proxy->shouldReceive('find')->once()->andReturn($account);
-
-        $dataSource = Mockery::mock(AccountDataSource::class)->makePartial();
-        $dataSource->shouldAllowMockingProtectedMethods();
-        $dataSource->shouldReceive('getCustomerDataSource')->never();
-        $dataSource->shouldReceive('getFacebookDataSource')->never();
-        $dataSource->shouldReceive('getTikTokDataSource')->once()->andReturn($proxy);
-
-        if ($dataSource instanceof AccountDataSource) {
-            self::assertSame($account, $dataSource->find('123'));
-            Mockery::close();
-        }
-    }
-
-    public function testFindWithException()
+    public function testFindRaiseUnresolvedAdAccount(?BaseAccountDataSource $dataSource, string $accountId)
     {
         $this->expectException(UnresolvedAdAccount::class);
-        $account = Mockery::mock(Account::class);
 
-        $proxy = Mockery::mock(AdvertiserDataSource::class);
-        $proxy->shouldReceive('find')->once()->andReturnNull();
-
-        $dataSource = Mockery::mock(AccountDataSource::class)->makePartial();
-        $dataSource->shouldAllowMockingProtectedMethods();
-        $dataSource->shouldReceive('getCustomerDataSource')->never();
-        $dataSource->shouldReceive('getFacebookDataSource')->never();
-        $dataSource->shouldReceive('getTikTokDataSource')->once()->andReturn($proxy);
-
-        if ($dataSource instanceof AccountDataSource) {
-            self::assertSame($account, $dataSource->find('123'));
-            Mockery::close();
-        }
+        if ($dataSource) $this->dataSource->setDataSources($dataSource);
+        $this->dataSource->find($accountId);
     }
 }
