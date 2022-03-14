@@ -9,7 +9,7 @@ use Google\Ads\GoogleAds\Lib\V10\GoogleAdsClientBuilder;
 use Google\Auth\Credentials\UserRefreshCredentials;
 
 /**
- * @version 0.1
+ * @version 0.1.1
  */
 class Authentication
 {
@@ -25,6 +25,11 @@ class Authentication
     public function getClient(): GoogleAdsClient
     {
         return $this->client;
+    }
+
+    public function getCredentials(): Credentials
+    {
+        return $this->credentials;
     }
 
     private function getOauthToken(): UserRefreshCredentials

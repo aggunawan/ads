@@ -8,7 +8,7 @@ use PHPUnit\Framework\TestCase;
 
 class AuthenticationTest extends TestCase
 {
-    public function testGetClient()
+    public function getterProvider(): array
     {
         $credentials = $this->createMock(Authentication\Credentials::class);
         $credentials->expects(self::once())->method('getClientId')->willReturn('foo');
@@ -18,6 +18,18 @@ class AuthenticationTest extends TestCase
         $credentials->expects(self::once())->method('getLoginCustomerId')->willReturn(1);
 
         $authenticate = new Authentication($credentials);
-        self::assertInstanceOf(GoogleAdsClient::class, $authenticate->getClient());
+
+        return [
+            [GoogleAdsClient::class, $authenticate->getClient()],
+            [Authentication\Credentials::class, $authenticate->getCredentials()],
+        ];
+    }
+
+    /**
+     * @dataProvider getterProvider
+     */
+    public function testGetter(string $class, $object)
+    {
+        self::assertInstanceOf($class, $object);
     }
 }
