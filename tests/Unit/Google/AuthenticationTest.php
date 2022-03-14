@@ -3,7 +3,7 @@
 namespace Tests\Unit\Google;
 
 use App\Google\Authentication;
-use Google\Ads\GoogleAds\V10\Services\GoogleAdsServiceClient;
+use Google\Ads\GoogleAds\Lib\V10\GoogleAdsClient;
 use PHPUnit\Framework\TestCase;
 
 class AuthenticationTest extends TestCase
@@ -18,6 +18,6 @@ class AuthenticationTest extends TestCase
         $credentials->expects(self::once())->method('getLoginCustomerId')->willReturn(1);
 
         $authenticate = new Authentication($credentials);
-        self::assertInstanceOf(GoogleAdsServiceClient::class, $authenticate->getClient());
+        self::assertInstanceOf(GoogleAdsClient::class, $authenticate->getClient());
     }
 }

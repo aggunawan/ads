@@ -6,24 +6,23 @@ use App\Google\Authentication\Credentials;
 use Google\Ads\GoogleAds\Lib\OAuth2TokenBuilder;
 use Google\Ads\GoogleAds\Lib\V10\GoogleAdsClient;
 use Google\Ads\GoogleAds\Lib\V10\GoogleAdsClientBuilder;
-use Google\Ads\GoogleAds\V10\Services\GoogleAdsServiceClient;
 use Google\Auth\Credentials\UserRefreshCredentials;
 
 /**
- * @version 0.0
+ * @version 0.1
  */
 class Authentication
 {
-    private readonly GoogleAdsServiceClient $client;
+    private GoogleAdsClient $client;
 
     public function __construct(
         private readonly Credentials $credentials
     )
     {
-        $this->client = $this->buildClient()->getGoogleAdsServiceClient();
+        $this->client = $this->buildClient();
     }
 
-    public function getClient(): GoogleAdsServiceClient
+    public function getClient(): GoogleAdsClient
     {
         return $this->client;
     }
