@@ -2,6 +2,7 @@
 
 namespace Tests\Unit\Google;
 
+use App\Google\Authentication;
 use App\Google\CustomerDataSource;
 use App\Objects\Contracts\AccountInterface;
 use JetBrains\PhpStorm\ArrayShape;
@@ -10,18 +11,6 @@ use PHPUnit\Framework\TestCase;
 class CustomerDataSourceTest extends TestCase
 {
     static public ?CustomerDataSource $customerDataSource;
-
-    public static function setUpBeforeClass(): void
-    {
-        self::$customerDataSource = new CustomerDataSource('bar');
-        parent::setUpBeforeClass();
-    }
-
-    public static function tearDownAfterClass(): void
-    {
-        self::$customerDataSource = null;
-        parent::tearDownAfterClass();
-    }
 
     public function testFind()
     {
@@ -55,6 +44,10 @@ class CustomerDataSourceTest extends TestCase
      */
     public function testIsAccountCompatible(bool $condition, string $accountId)
     {
+        self::$customerDataSource = new CustomerDataSource(
+            $this->createMock(Authentication::class)
+        );
+
         self::assertSame($condition, self::$customerDataSource->isAccountCompatible($accountId));
     }
 }
