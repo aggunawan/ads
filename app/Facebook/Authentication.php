@@ -23,7 +23,8 @@ class Authentication
         return Api::init(
             $this->credentials->getAppId(),
             $this->credentials->getAppSecret(),
-            $this->credentials->getAccessToken()
+            $this->credentials->getAccessToken(),
+            false
         );
     }
 
