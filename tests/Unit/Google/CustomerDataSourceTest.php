@@ -2,19 +2,66 @@
 
 namespace Tests\Unit\Google;
 
+use App\Exceptions\UnresolvedAdAccount;
 use App\Google\Authentication;
 use App\Google\CustomerDataSource;
 use App\Objects\Contracts\AccountInterface;
+use Google\Ads\GoogleAds\V10\Resources\Customer;
+use Google\ApiCore\ApiException;
+use Google\ApiCore\ValidationException;
 use JetBrains\PhpStorm\ArrayShape;
 use PHPUnit\Framework\TestCase;
 
 class CustomerDataSourceTest extends TestCase
 {
     static public ?CustomerDataSource $customerDataSource;
+    static public ?Authentication $authentication;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+        self::$authentication = $this->createMock(Authentication::class);
+        self::$customerDataSource = new CustomerDataSource(self::$authentication);
+    }
+
+    protected function tearDown(): void
+    {
+        parent::tearDown();
+        self::$authentication = null;
+        self::$customerDataSource = null;
+    }
+
+    /**
+     * @throws ValidationException
+     * @throws ApiException
+     * @throws UnresolvedAdAccount
+     */
     public function testFind()
     {
-        self::assertInstanceOf(AccountInterface::class, self::$customerDataSource->find("foo"));
+        $customer = $this->createMock(Customer::class);
+
+        self::$customerDataSource = $this->createPartialMock(CustomerDataSource::class, ['getCustomer']);
+        self::$customerDataSource->expects(self::once())->method('getCustomer')->willReturn($customer);
+
+        $result = self::$customerDataSource->find('customers/123');
+
+        self::assertInstanceOf(AccountInterface::class, $result);
+    }
+
+    /**
+     * @throws ValidationException
+     * @throws ApiException
+     */
+    public function testFindWithNullCustomer()
+    {
+        $this->expectException(UnresolvedAdAccount::class);
+
+        self::$customerDataSource = $this->createPartialMock(CustomerDataSource::class, ['getCustomer']);
+        self::$customerDataSource->expects(self::once())->method('getCustomer')->willReturn(null);
+
+        $result = self::$customerDataSource->find('customers/123');
+
+        self::assertNull($result);
     }
 
     #[ArrayShape([
@@ -44,10 +91,6 @@ class CustomerDataSourceTest extends TestCase
      */
     public function testIsAccountCompatible(bool $condition, string $accountId)
     {
-        self::$customerDataSource = new CustomerDataSource(
-            $this->createMock(Authentication::class)
-        );
-
         self::assertSame($condition, self::$customerDataSource->isAccountCompatible($accountId));
     }
 }
