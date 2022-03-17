@@ -48,9 +48,28 @@ class AdAccountDataSourceTest extends TestCase
         parent::tearDownAfterClass();
     }
 
+    /**
+     * @throws UnresolvedAdAccount
+     */
     public function testFind()
     {
-        self::assertInstanceOf(AccountInterface::class, self::$adAccountDataSource->find('foo'));
+        $res = $this->createMock(Response::class);
+        $res->expects(self::once())->method('getContent')->willReturn(["id" => "act_123", "name" => "Foo"]);
+
+        $api = $this->createMock(Api::class);
+        $api->expects(self::once())->method('call')->willReturn($res);
+        Api::setInstance($api);
+
+        self::$adAccountDataSource = new AdAccountDataSource();
+        $account = self::$adAccountDataSource->find('act_123');
+        self::assertInstanceOf(AccountInterface::class, $account);
+        self::assertSame("Foo", $account->getName());
+    }
+
+    public function testFindThrownUnresolvedAccount()
+    {
+        $this->expectException(UnresolvedAdAccount::class);
+        self::assertInstanceOf(AccountInterface::class, self::$adAccountDataSource->find('act_123'));
     }
 
     #[ArrayShape([

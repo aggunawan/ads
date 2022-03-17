@@ -14,6 +14,9 @@ use Illuminate\Support\Str;
 use InvalidArgumentException;
 use JetBrains\PhpStorm\Pure;
 
+/**
+ * @version 0.1.2
+ */
 class AdAccountDataSource extends BaseAccountDataSource
 {
     public function __construct(
@@ -24,9 +27,17 @@ class AdAccountDataSource extends BaseAccountDataSource
         );
     }
 
-    public function find(string $accountId): ?AccountInterface
+    /**
+     * @throws UnresolvedAdAccount
+     */
+    public function find(string $accountId): AccountInterface
     {
-        return new Account($accountId, 'Foo');
+        try {
+            $account = (new AdAccount($accountId))->getSelf(['name']);
+            return new Account($accountId, $account->{AdAccountFields::NAME});
+        } catch (InvalidArgumentException) { }
+
+        throw new UnresolvedAdAccount();
     }
 
     #[Pure]
