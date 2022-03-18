@@ -1,0 +1,61 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "Ads API",
+        "version": "V0"
+    },
+    "paths": {
+        "/api": {
+            "get": {
+                "tags": [
+                    "App"
+                ],
+                "summary": "Get version of API.",
+                "operationId": "fbf2e3b72bbb37fc5fd444dada90e068",
+                "responses": {
+                    "200": {
+                        "description": "The version of API.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/Message"
+                                        }
+                                    },
+                                    "type": "object"
+                                },
+                                "examples": {
+                                    "response": {
+                                        "summary": "Default",
+                                        "value": {
+                                            "data": {
+                                                "message": "Ads API v0"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "Message": {
+                "title": "Message",
+                "properties": {
+                    "message": {
+                        "type": "string"
+                    }
+                },
+                "type": "object"
+            }
+        }
+    },
+    "security": [
+        []
+    ]
+}
