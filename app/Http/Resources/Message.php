@@ -14,6 +14,7 @@ use OpenApi\Attributes\Schema;
     properties: [
         new Property(
             property: "message",
+            description: "A Message",
             type: "string"
         )
     ]

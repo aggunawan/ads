@@ -5,25 +5,6 @@
         "version": "V0"
     },
     "paths": {
-        "/api/ad_accounts": {
-            "get": {
-                "tags": [
-                    "Ad Account"
-                ],
-                "summary": "Get list of Ad Account",
-                "operationId": "cbfc464a29f2095593221c793b8b557f",
-                "responses": {
-                    "default": {
-                        "description": "Default",
-                        "content": {
-                            "application/json": {
-                                "schema": {}
-                            }
-                        }
-                    }
-                }
-            }
-        },
         "/api": {
             "get": {
                 "tags": [
@@ -67,6 +48,7 @@
                 "title": "Message",
                 "properties": {
                     "message": {
+                        "description": "A Message",
                         "type": "string"
                     }
                 },
