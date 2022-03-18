@@ -4,12 +4,13 @@ namespace App\DataSource;
 
 use App\DataSource\Abstracts\BaseAccountDataSource;
 use App\DataSource\Contracts\AccountDataSourceInterface;
+use App\Exceptions\AmbiguousAdAccountProvider;
 use App\Exceptions\UnresolvedAdAccount;
 use App\Objects\Account;
 use App\Objects\Contracts\AccountInterface;
 
 /**
- * @version 0.1
+ * @version 0.1.1
  */
 class AccountDataSource extends BaseAccountDataSource implements AccountDataSourceInterface
 {
@@ -27,6 +28,7 @@ class AccountDataSource extends BaseAccountDataSource implements AccountDataSour
 
     /**
      * @throws UnresolvedAdAccount
+     * @throws AmbiguousAdAccountProvider
      */
     public function find(string $accountId): AccountInterface
     {
@@ -40,14 +42,25 @@ class AccountDataSource extends BaseAccountDataSource implements AccountDataSour
         throw new UnresolvedAdAccount();
     }
 
+    /**
+     * @throws AmbiguousAdAccountProvider
+     */
     private function getCompatibleDataSource(string $accountId): ?BaseAccountDataSource
     {
+        $compatibleClasses = [];
+
         foreach ($this->dataSources as $dataSource) {
             if ($dataSource instanceof BaseAccountDataSource) {
-                if ($dataSource->isAccountCompatible($accountId)) return $dataSource;
+                if ($dataSource->isAccountCompatible($accountId)) $compatibleClasses[] = $dataSource;
             }
         }
 
-        return null;
+        return match (true) {
+            count($compatibleClasses) >= 2 => throw new AmbiguousAdAccountProvider(
+                "Multiple compatible data source provided."
+            ),
+            count($compatibleClasses) == 1 => $compatibleClasses[0],
+            default => null
+        };
     }
 }
